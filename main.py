@@ -40,11 +40,21 @@ def disease_risk_factors():
     data = {'disease_name': disease, 'risk_factors_list': risk_factors_list, 'patient_id': patient_id}
     response = requests.post(CNM_url_risk_factors, json=data)
     print("HELLO")
-    risk_factors_name_list = response.json()
+    risk_factors_name_lists = response.json()
     # return list of risk factors related to disease
     # if risk factor is shared by patient, add to another list
+    disease_id = risk_factors_name_lists[2]
+    risk_id_list = risk_factors_name_lists[3]
+    # event
+    event_url = get_event_server(CNM_url)
+    event_url = event_url['url']
+    event_url = f'{event_url}/event-risk-disease'
+    data = {'risk_factors_id': risk_id_list, 'disease_id': disease_id}
+    event_response = requests.post(event_url, json=data)
 
-    return jsonify(risk_factors_name_list)
+
+
+    return jsonify(risk_factors_name_lists)
 
 @app.route('/risk_factors_process', methods=['GET', 'POST'])
 @jwt_required()
@@ -56,7 +66,13 @@ def risk_factors_patient_relationship():
     CNM_url_risk_factors = f'{CNM_url}/risk_factors'
     data = {'risk_factors': risk_factors, 'patient_id': patient_id}
     response = requests.post(CNM_url_risk_factors, json=data)
-    print(response)
+    risk_factors_id_list = response.json()
+    # event
+    event_url = get_event_server(CNM_url)
+    event_url = event_url['url']
+    event_url = f'{event_url}/event-risk'
+    data = {'patient_id': patient_id, 'risk_factors_id': risk_factors_id_list}
+    event_response = requests.post(event_url, json=data)
     return('hi')
 
 @app.route('/risk_factors_input', methods=['GET', 'POST'])
@@ -66,18 +82,22 @@ def risk_factor_input():
     risk_factors = data['riskFactorsData']
     patient_id = data['patientID']
     print(risk_factors, patient_id)
+    
     CNM_url_risk_factors = f'{CNM_url}/risk_factors_input'
     data = {'risk_factors': risk_factors, 'patient_id': patient_id}
     response = requests.post(CNM_url_risk_factors, json=data)
     print("RF LIST:", response.json())
     risk_factors_id_list = response.json()
 
+    # event
     event_url = get_event_server(CNM_url)
     event_url = event_url['url']
     event_url = f'{event_url}/event-risk'
     data = {'patient_id': patient_id, 'risk_factors_id': risk_factors_id_list}
     event_response = requests.post(event_url, json=data)
     return('hi')
+
+
 
 def get_event_server(cloud_url):
     event_url = f'{cloud_url}/event_server'
